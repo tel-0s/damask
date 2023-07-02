@@ -201,9 +201,9 @@ def detect_loom_format(json_string):
 
 if __name__ == '__main__':
     import sys
-    
+
     path = sys.argv[1]
-    with open(path, "r") as f:
+    with open(path, "r", encoding="utf-8") as f:
         treedata = f.read()
     loom_format = detect_loom_format(treedata)
     if loom_format == "pyloom":
