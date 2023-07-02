@@ -27,7 +27,7 @@ def to_pyloom_format(tree):
     root_node = build_node(tree)
     pyloom_data = {"root": root_node}
 
-    return pyloom_data
+    return json.dumps(pyloom_data)
 
 
 def from_pyloom_format(pyloom_data):
@@ -76,12 +76,12 @@ def to_loomsidian_format(loom_tree):
     # Update the parent ID of the root node
     root_node["parentId"] = None
 
-    return {
+    return json.dumps({
         "hoisted": [],
         "nodes": parent_child_relationship,
         "current": root_id,
         "generating": None
-    }
+    })
 
 
 def from_loomsidian_format(json_str):
@@ -183,20 +183,53 @@ def to_bonsai_format(loom_tree):
 
     return json.dumps(bonsai_data)
 
+def detect_loom_format(json_string):
+    try:
+        data = json.loads(json_string)
+        
+        if "root" in data and "nodes" not in data:
+            return "pyloom"
+        elif "nodes" in data and "generating" in data:
+            return "loomsidian"
+        elif "nodes" in data and "edges" in data and "pathNodes" in data:
+            return "bonsai"
+        else:
+            return "unknown"
+        
+    except ValueError:
+        return "unknown"
 
-# if __name__ == '__main__':
-#     with open("G:/Loom/newsun.json", "r") as f:
-#         treedata = f.read()
+if __name__ == '__main__':
+    import sys
+    
+    path = sys.argv[1]
+    with open(path, "r") as f:
+        treedata = f.read()
+    loom_format = detect_loom_format(treedata)
+    if loom_format == "pyloom":
+        loom_tree = from_pyloom_format(treedata)
+    elif loom_format == "loomsidian":
+        loom_tree = from_loomsidian_format(treedata)
+    elif loom_format == "bonsai":
+        loom_tree = from_bonsai_format(treedata)
+    else:
+        print("Unknown format")
+        sys.exit(1)
 
-#     loom_tree = from_loomsidian_format(treedata)
-#     pyloom_data = to_pyloom_format(loom_tree)
-#     print("\n\nPYLOOMDATA\n"+str(pyloom_data))
-#     pyloom_data = json.dumps(pyloom_data)
-#     loom_tree = from_pyloom_format(pyloom_data)
-#     print("\n\nLOOMDATA\n"+str(loom_tree))
-#     bonsai_data = to_bonsai_format(loom_tree)
-#     print("\n\nBONSAIDATA\n"+str(bonsai_data))
-#     bonsai_data = json.dumps(bonsai_data)
-#     loom_tree = from_bonsai_format(json.loads(bonsai_data))
-#     loomsidian_data = to_loomsidian_format(loom_tree)
-#     print("\n\nLOOMSIDIANDATA\n"+str(loomsidian_data))
+    print("Format detected: " + loom_format)
+    print("Enter the format you want to convert to.\n1. Pyloom\n2. Loomsidian\n3. Bonsai")
+    choice = int(input())
+    if choice == 1:
+        loom_data = to_pyloom_format(loom_tree)
+    elif choice == 2:
+        loom_data = to_loomsidian_format(loom_tree)
+    elif choice == 3:
+        loom_data = to_bonsai_format(loom_tree)
+    else:
+        print("Invalid choice")
+        sys.exit(1)
+    print("Enter the path to save the file")
+    path = input()
+    with open(path, "w") as f:
+        f.write(loom_data)
+    print("File saved successfully.")
